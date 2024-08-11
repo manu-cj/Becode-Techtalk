@@ -6,7 +6,7 @@ export function Counter() {
   const dispatch = useDispatch()
 
   return (
-    <div>
+    <>
       <div>
       <button
           aria-label="Decrement value"
@@ -21,9 +21,10 @@ export function Counter() {
         >
           Increment
         </button>
+        <br></br>
         <button onClick={() => {dispatch(incrementByAmount(3))}}>increment By Amount</button>
         
       </div>
-    </div>
+    </>
   )
 }
