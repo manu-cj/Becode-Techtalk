@@ -8,7 +8,6 @@
 
 - **Slides** : Présentations sous forme de diapositives pour chaque techtalk.
 - **Code** : Exemples de code associés aux présentations.
-- **Ressources** : Liens et documents supplémentaires pour approfondir les sujets traités.
 
 ## Objectif
 
