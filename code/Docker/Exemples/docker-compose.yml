@@ -1,0 +1,103 @@
+version: "3.9"  # Version de Docker Compose utilisée
+
+services:
+  # ----------- FRONTEND -----------
+  frontend:
+    build:                        # On construit l'image à partir d'un Dockerfile
+      context: ./frontend         # Dossier du frontend (React ou autre)
+      dockerfile: Dockerfile      # Dockerfile à utiliser dans ce dossier
+    ports:
+      - "5173:5173"               # Expose le port de Vite (ou React dev server)
+    depends_on:
+      - backend                   # Le frontend attend que le backend soit dispo
+    environment:
+      - VITE_API_URL=http://localhost/api  # Variable utilisée côté React
+    networks:
+      - app-network               # Tous les services sont sur le même réseau
+
+  # ----------- BACKEND -----------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"               # Port de l'API Node.js
+    depends_on:
+      - db
+      - redis
+      - mailhog
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/mydb
+      - REDIS_HOST=redis          # Nom du service Redis sur le réseau Docker
+      - MAIL_HOST=mailhog         # Pour tester l'envoi d'emails en dev
+      - MAIL_PORT=1025
+    networks:
+      - app-network
+
+  # ----------- BASE DE DONNÉES -----------
+  db:
+    image: postgres:15            # Image officielle de PostgreSQL
+    restart: always               # Redémarre le service en cas de crash
+    environment:
+      POSTGRES_USER: postgres     # Nom d'utilisateur PostgreSQL
+      POSTGRES_PASSWORD: postgres # Mot de passe
+      POSTGRES_DB: mydb           # Nom de la base créée au démarrage
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Volume pour persister les données
+    networks:
+      - app-network
+
+  # ----------- CACHE / SESSIONS -----------
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"               # Port standard de Redis
+    networks:
+      - app-network
+
+  # ----------- ADMINISTRATION DE POSTGRESQL -----------
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "5050:80"                 # pgAdmin accessible sur localhost:5050
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # ----------- OUTIL MAIL DEV -----------
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"               # Interface web de Mailhog (lecture des mails)
+      - "1025:1025"               # SMTP pour que le backend envoie les mails
+    networks:
+      - app-network
+
+  # ----------- REVERSE PROXY -----------
+  nginx:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "80:80"                   # Rend le site accessible sur localhost:80
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf  # Configuration custom
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+
+# ----------- VOLUMES -----------
+volumes:
+  pgdata:                         # Pour que les données Postgres persistent
+
+# ----------- RÉSEAU PARTAGÉ -----------
+networks:
+  app-network:
+    driver: bridge                # Réseau privé Docker (bridge = classique)

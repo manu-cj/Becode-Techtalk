@@ -1,0 +1,38 @@
+version: '3.7'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000" # Expose le port 3000 de l'application sur le port 3000 de l'hôte
+    depends_on:
+      - db # Dépendance au service "db" (la base de données)
+    environment:
+      - DB_HOST=${DB_HOST} # Nom d'hôte de la base de données
+      - DB_USER=${DB_USER} # Utilisateur de la base de données
+      - DB_PASSWORD=${DB_PASSWORD} # Mot de passe de la base de données
+      - DB_NAME=${DB_NAME} # Nom de la base de données
+
+  db:
+    image: mysql:5.7 # Image Docker de MySQL version 5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: example # Mot de passe root pour MySQL
+      MYSQL_DATABASE: mydb # Nom de la base de données à créer
+    volumes:
+      - mysql-data:/var/lib/mysql # Volume pour persister les données MySQL
+    ports:
+      - "3306:3306" # Expose le port 3306 de MySQL sur le port 3306 de l'hôte
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin # Image Docker de phpMyAdmin
+    environment:
+      PMA_HOST: db # Nom d'hôte de la base de données
+      MYSQL_ROOT_PASSWORD: example # Mot de passe root pour accéder à MySQL
+    ports:
+      - "8080:80" # Expose le port 80 de phpMyAdmin sur le port 8080 de l'hôte
+    depends_on:
+      - db # Dépendance au service "db" (la base de données)
+
+volumes:
+  mysql-data:
+    driver: local # Utilisation d'un volume local pour stocker les données
